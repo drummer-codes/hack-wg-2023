@@ -2,6 +2,19 @@
   const MSG_AUTHOR_SELF = 'self';
   const MSG_AUTHOR_BOT = 'bot';
   const MSG_AUTHOR_SYSTEM = 'system';
+
+  const LIST_ITEM_TOKENS = [
+    '- ',
+    '1.',
+    '2.',
+    '3.',
+    '4.',
+    '5.',
+    '6.',
+    '7.',
+    '8.',
+    '9.',
+  ];
   
   class ChatBar {
     constructor() {
@@ -13,12 +26,16 @@
       }
       this.msgs = [];
       this.loading = false;
+      this.activeScenario = null;
+      this.activeScenarioStep = 0;
       
       this._init();
     }
     
     _init() {
-      this._initMsgRendering();
+      this.msgs.forEach((el) => {
+        this._renderMsg(el);
+      })
     }
     _addMsg(msg, author) {
       if (!msg || !author) {
@@ -28,21 +45,30 @@
       
       const msgObj = {
         id: this._generateUID(),
-        text: this._handleMsg(msg),
-        author: author
+        text: msg,
+        originalText: msg,
+        author: author,
+        scenarioId: null,
+        scenarioFired: false,
       }
+      
+      // scenarios
+      // if (author === MSG_AUTHOR_SELF) {
+      //   this._msgScenariosHandle(msgObj);
+      // }
+      this.checkForScenarios(msgObj);
+      
+      // formatting
+      msgObj.text = this._formatMsg(msgObj.text);
+      
+      if (author === MSG_AUTHOR_SELF && !msgObj.scenarioId) {
+        msgObj.isRequestNeeded = true;
+      }
+      
       this.msgs.push(msgObj);
       this._renderMsg(msgObj);
-    }
-    _handleMsg(msg) {
-      // some magic with text
-      // console.log('_handleMsg', msg);
-      //find urls
-      msg = msg.replace(/(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig, function(url) { return '<a href="' + url + '">' + url + '</a>'; });
-      return msg;
-    }
-    _generateUID() {
-      return Date.now().toString(36) + Math.random().toString(36).substr(2);
+      
+      return msgObj;
     }
     _renderMsg(msgObj) {
       if (!msgObj || typeof msgObj !== 'object') {
@@ -62,8 +88,12 @@
           }, 1100);
         }, 5000);
       }
+
+      window.Logger.addMessageFE(msgObj.author, msgObj.text);
       
       this.els.body.appendChild(msgElement);
+
+      window.onMessageAdded();
     }
     _generateMsgElement(msgObj) {
       if (!msgObj || typeof msgObj !== 'object') {
@@ -83,6 +113,7 @@
       const msgEl = document.createElement('div');
       msgEl.classList.add('chatbar_msg');
       if(classModifier) msgEl.classList.add(classModifier);
+      msgEl.dataset.uid = msgObj.id;
   
       const msgContent = document.createElement('div');
       msgContent.innerHTML = msgObj.text;
@@ -96,11 +127,6 @@
       
       return msgEl;
     }
-    _initMsgRendering() {
-      this.msgs.forEach((el) => {
-        this._renderMsg(el);
-      })
-    }
     _sendRequest(msg) {
       this.setLoading(true);
       window.ai.query(msg).then(answer => {
@@ -108,22 +134,161 @@
         this.sendMessage(answer, MSG_AUTHOR_BOT);
       }).catch(error => {
         this.setLoading(false)
-        console.log(error);
+        window.Logger.addError(error);
       });
+    }
+    _sendProcessedAnswer() {
+      
+    }
+    _formatMsg(msg) {
+      //wrap lines in paragraphs
+      let lines = msg.split("\n");
+      msg = '';
+      lines.forEach(line => {
+        
+        if (LIST_ITEM_TOKENS.includes(line.substr(0, 2))) {
+          line = `\t ${line}`;
+        }
+        msg += `<p>${line}</p>`;
+      });
+
+      msg = msg.replace(/World of Tanks/g, '<b>World of Tanks</b>');
+      msg = msg.replace(new RegExp(`/${window.SETTINGS.nickname}/g`), `<b>${window.SETTINGS.nickname}</b>`);
+
+      //gold
+      msg = msg.replace(/(\d+?)\s*\$GLD/g, (sub) => {
+        const number = Number(sub.replace('$GLD', ''));
+        return `<span class="price">${number}</span>`;
+      });
+
+      //SCENARIO END TOKEN
+
+      msg = msg.replace(/SCENARIO:BUY_PREM:(\d){1,2}/g, (sub) => {
+        const number = sub.split(':')[2];
+        switch (number) {
+          case '3':
+            window.fakePurchase(650, 'You just bought 3 days of WoT Premium Account', () => {
+              window.addPremiumDays(3);
+            });
+            break;
+          case '7':
+              window.fakePurchase(1250, 'You just bought 7 days of WoT Premium Account', () => {
+                window.addPremiumDays(7);
+              });
+              break;
+          case '14':
+              window.fakePurchase(1800, 'You just bought 14 days of WoT Premium Account', () => {
+                window.addPremiumDays(14);
+              });
+              break;
+          case '30':
+              window.fakePurchase(2500, 'You just bought 30 days of WoT Premium Account', () => {
+                window.addPremiumDays(30);
+              });
+              break;
+        
+          default:
+            break;
+        }
+        return '';
+      });
+
+      //remove blank paragraph
+      msg = msg.replace(/<p><\/p>/g, '');
+      
+      // find urls
+      msg = msg.replace(/(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig, function(url) { return '<a href="' + url + '">' + url + '</a>'; });
+      return msg;
+    }
+    _generateUID() {
+      return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+    checkForScenarios(msgObj) {
+      if (msgObj.author !== MSG_AUTHOR_SELF) {
+        return;
+      }
+      if (this.activeScenario) {
+        const scenario = this._scenarios2[this.activeScenario];
+        const step = scenario[this.activeScenarioStep];
+        if (step && step.query && step.query(msgObj)) {
+          msgObj.scenarioFired = true;
+        }
+      } else {
+        Object.keys(this._scenarios2).forEach((scenarioId) => {
+          const isScenarioShouldStart = this._scenarios2[scenarioId][this.activeScenarioStep].query(msgObj);
+          if (isScenarioShouldStart && this.activeScenario === null) {
+            this.activeScenario = scenarioId;
+            msgObj.scenarioFired = true;
+          }
+        })
+      }
+    }
+    _scenarios2 = {
+      // apple: [
+      //   {
+      //     query: (msgObj) => {
+      //       return msgObj.text === 'apple';
+      //     },
+      //     answer: (msgObj) => {
+      //       return 'apple scenario step 1'
+      //     },
+      //   },
+      //   {
+      //     query: (msgObj) => {
+      //       return msgObj.text === 'apple2';
+      //     },
+      //     answer: (msgObj) => {
+      //       return 'apple scenario step 2'
+      //     },
+      //   }
+      // ],
+      // tank2: [
+      //   {
+      //     query: (msgObj) => {
+      //       return msgObj.text.includes('tank2')
+      //     },
+      //     answer: (msgObj) => {
+      //       return 'tank2 scenario step 1'
+      //     },
+      //   }
+      // ],
+    }
+    _randomInteger(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
     }
     sendMessage(msg, author = MSG_AUTHOR_SELF) {
       if (this.loading) {
+        console.error('loading')
         return;
       }
       
-      this._addMsg(msg, author);
-      if (author === MSG_AUTHOR_SELF) {
+      const msgObj = this._addMsg(msg, author);
+      
+      if (this.activeScenario && author === MSG_AUTHOR_SELF) {
+        if (!msgObj.scenarioFired) {
+          this.activeScenario = null;
+          this.activeScenarioStep = 0;
+          
+          if (msgObj.isRequestNeeded) {
+            this._sendRequest(msg);
+          }
+          return;
+        }
+        this.setLoading(true);
+        
+        setTimeout(() => {
+          const scenarioAnswerObj = this._scenarios2[this.activeScenario][this.activeScenarioStep];
+          const scenarioAnswerText = scenarioAnswerObj.answer(msgObj);
+          
+          this.setLoading(false);
+          if (scenarioAnswerText) {
+            this.sendMessage(scenarioAnswerText, MSG_AUTHOR_BOT);
+          }
+          this.activeScenarioStep++;
+        }, this._randomInteger(750, 2000));
+      } else if (msgObj.isRequestNeeded) {
         this._sendRequest(msg);
       }
-    }
-    removeMessage(id) {
-      // TODO
-      console.log('removeMessage', id);
     }
     setLoading(val) {
       if (val) {
