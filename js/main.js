@@ -8,6 +8,7 @@ const SETTINGS = {
 };
 const ELEMENTS = {
     app: document.getElementById('app'),
+    wrapper: document.getElementById('wrapper'),
     chatbar: document.getElementById('chatbar'),
     messageInput: document.getElementById('message-input'),
     messageClear: document.getElementById('message-clear'),
@@ -119,6 +120,15 @@ window.addEventListener('keydown', e => {
         ELEMENTS.app.classList.toggle('zoom');
     }
 });
+
+window.addEventListener('resize', handleResize);
+handleResize();
+
+function handleResize() {
+    const width = window.innerWidth;
+    const ratio = width / 1920.0;
+    ELEMENTS.wrapper.style.transform = `translateY(50vh) scale(${Math.min(ratio, 1)}) translateY(-50%)`;
+}
 
 //#endregion
 

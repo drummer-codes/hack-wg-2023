@@ -9,48 +9,59 @@
     <link rel="stylesheet" href="./css/main.css">
 </head>
 <body>
-    <div class="gui" id="app">
-        <div class="loading-bg" id="loading">
-            <div class="loading-spinner">
-                <div class="loading-spinner-caption"><span id="loading-text">Loading...</span></div>
-            </div>
-        </div>
-        <h2 class="nickname" id="nickname"></h2>
-        <h2 class="premium" id="premium">90</h2>
-        <div class="gold" id="gold">420,690</div>
-        <div class="gold-notifications" id="gold-notifications"></div>
-        <div class="chatbar" id="chatbar">
-            <div class="chatbar_header">
-                <div class="chatbar_header-top">
-                    <h2 class="chatbar_title">Metal AI</h2>
-                    <div class="close hand" onclick="openClose(true)"></div>
+    <div class="showcase" data-step="1" style="display: grid; place-items: center; color: white;">
+        <h1 style="font-size: 20vw; margin-bottom: 5vh;">WWW</h1>
+        <h2 style="font-size: 5vw; font-weight: 100;">from the Web Stream</h2>
+    </div>
+    <div class="showcase" data-step="2" style="display: grid; place-items: center; color: white;">
+        <h1 style="font-size: 8vw; font-weight: 100;">Metal</h1>
+        <img style="width: 50vmin; height: 50vmin;" src="./img/avatar/friendly.png" alt="">
+    </div>
+    <div class="wrapper" id="wrapper">
+        <div class="gui" id="app">
+            <div class="loading-bg" id="loading">
+                <div class="loading-spinner">
+                    <div class="loading-spinner-caption"><span id="loading-text">Loading...</span></div>
                 </div>
             </div>
-            <div class="chatbar_body">
-                <div class="chatbar_intro" id="intro">
-                    <div class="chatbar_avatar bg-cover hand" id="avatar" onclick="changeMood(true)"></div>
-                    <p>Type a message here to chat with out ultra hi-tech assistant Metal.</p>
-                </div>
-                <div class="chatbar_text" id="messages"></div>
-            </div>
-            <div class="chatbar_footer">
-                <div class="typing" id="typing-indicator">Metal is typing</div>
-                <div class="chatbar_input-wrap" id="input-wrap">
-                    <div class="message-box">
-                        <input class="hand" type="text" spellcheck="false" id="message-input">
-                        <span class="message-box_placeholder">Message</span>
-                        <i class="find"></i>
-                        <i class="clear hand" id="message-clear"></i>
+            <h2 class="nickname" id="nickname"></h2>
+            <h2 class="premium" id="premium">90</h2>
+            <div class="gold" id="gold">420,690</div>
+            <div class="gold-notifications" id="gold-notifications"></div>
+            <div class="chatbar" id="chatbar">
+                <div class="chatbar_header">
+                    <div class="chatbar_header-top">
+                        <h2 class="chatbar_title">Metal AI</h2>
+                        <div class="close hand" onclick="openClose(true)"></div>
                     </div>
-                    <div class="chatbar_input-btn hand button" id="send-message"></div>
                 </div>
+                <div class="chatbar_body">
+                    <div class="chatbar_intro" id="intro">
+                        <div class="chatbar_avatar bg-cover hand" id="avatar" onclick="changeMood(true)"></div>
+                        <p>Type a message here to chat with out ultra hi-tech assistant Metal.</p>
+                    </div>
+                    <div class="chatbar_text" id="messages"></div>
+                </div>
+                <div class="chatbar_footer">
+                    <div class="typing" id="typing-indicator">Metal is typing</div>
+                    <div class="chatbar_input-wrap" id="input-wrap">
+                        <div class="message-box">
+                            <input class="hand" type="text" spellcheck="false" id="message-input">
+                            <span class="message-box_placeholder">Message</span>
+                            <i class="find"></i>
+                            <i class="clear hand" id="message-clear"></i>
+                        </div>
+                        <div class="chatbar_input-btn hand button" id="send-message"></div>
+                    </div>
+                </div>
+                <div class="chatbar_avatar chatbar_avatar__outer hand hide" id="avatar-outer" onclick="changeMood(true)"></div>
             </div>
-            <div class="chatbar_avatar chatbar_avatar__outer hand hide" id="avatar-outer" onclick="changeMood(true)"></div>
+            <div class="open bg-cover hand button" onclick="openClose(true)"></div>
         </div>
-        <div class="open bg-cover hand button" onclick="openClose(true)"></div>
     </div>
     
     <script src="./js/common.js"></script>
+    <script src="./js/showcase.js"></script>
     <script src="./js/data.js"></script>
     <script src="./js/logger.js"></script>
     <script src="./js/api.js"></script>

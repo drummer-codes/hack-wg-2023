@@ -1,7 +1,4 @@
 (() => {
-    const OPENAI_API_BASE_URL = 'https://api.openai.com/v1/';
-    const OPENAI_API_CHAT_URL = OPENAI_API_BASE_URL + 'chat/completions';
-
     const CHATBOT_INSTRUCTIONS = [
         "You are a World of Tanks game assistant.",
         "Keep answers short.",
@@ -43,24 +40,27 @@
 
     function query(query) {
         const request = new XMLHttpRequest();
-        request.open('POST', OPENAI_API_CHAT_URL, true);
-
-        request.setRequestHeader('Authorization', 'Bearer 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');
-        request.setRequestHeader('Content-Type', 'application/json');
-
+        request.open('POST', 'https://drummer.codes/wg/metal/api/', true);
         request.send(generateChatCompletionPayload(query));
 
         return new Promise((resolve, reject) => {
             request.onload = (e) => {
                 if (e.target.status === 200) {
                     const response = JSON.parse(e.target.response);
-                    if (response.choices.length) {
-                        const message = response.choices[0].message;
-                        messageHistory.push(message);
-                        window.Logger.addMessageBE(message.role, message.content);
-                        resolve(message.content);
+
+                    if (response.result === 'success') {
+                        const data = JSON.parse(response.response);
+
+                        if (data.choices.length) {
+                            const message = data.choices[0].message;
+                            messageHistory.push(message);
+                            window.Logger.addMessageBE(message.role, message.content);
+                            resolve(message.content);
+                        } else {
+                            reject(REQUEST_ERROR_NO_CHOICES);
+                        }
                     } else {
-                        reject(REQUEST_ERROR_NO_CHOICES);
+                        console.error(data);
                     }
                 } else {
                     console.error(e.target);
@@ -72,11 +72,6 @@
                 reject(REQUEST_ERROR_ANSWER);
             }
         });
-    }
-
-    function rephrase(originalQuery) {
-        const rephrasedQuery = `Rephrase the following sentense keeping the original meaning: "${originalQuery}"`
-        return query(rephrasedQuery);
     }
 
     function generateChatCompletionPayload(query) {
@@ -143,7 +138,6 @@
 
     window.ai = {
         query: query,
-        rephrase: rephrase,
         setMood: setMood,
         moodOptions: CHATBOT_MOOD, 
     };

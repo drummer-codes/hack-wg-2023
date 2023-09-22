@@ -1,5 +1,5 @@
 const MORE_DATA = [
-    `This is the information about recent game updates: [3:48 PM] Alesya Gasparyan
+    `This is the information about recent game updates:
 
     Update 1.22 (September 2023)
     British Wheeled Medium Tanks: Six new wheeled vehicles that can turn in place, are easy to handle without extra movement modes, and have precise guns.
